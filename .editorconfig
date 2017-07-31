@@ -1,0 +1,30 @@
+# http://editorconfig.org
+
+
+# top-most editorConfig file
+root = true
+
+
+# unix-style newlines with a newline ending every file
+[*]
+end_of_line = lf
+insert_final_newline = true
+
+
+# set default charset
+charset = utf-8
+
+
+# 4 space indentation
+indent_style = space
+indent_size = 2
+
+# Matches the exact files either package.json or .travis.yml
+[{package.json, .travis.yml}]
+indent_sytle = space
+indent_size = 2
+
+
+[*.md]
+insert_final_newline = false
+trim_trailing_whitespace = false

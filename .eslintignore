@@ -1,0 +1,5 @@
+**/dist/**
+**/node_modules/**
+**/server.js
+**/store.js
+**/webpack.*.js
