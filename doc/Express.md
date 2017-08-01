@@ -207,6 +207,164 @@ app.all('/secret', function (req, res, next) {
 ```
 ###route paths
 Route paths, in combination with a request method, define the endpoints at which requests can be made. Route paths can be strings, string patterns, or regular expressions.
+###Response methods
+The methods on the response object (res) in the following table can send a response to the client, and terminate the request-response cycle. If none of these methods are called from a route handler, the client request will be left hanging.
 
+Method	Description
+res.download()	Prompt a file to be downloaded.
+res.end()	End the response process.
+res.json()	Send a JSON response.
+res.jsonp()	Send a JSON response with JSONP support.
+res.redirect()	Redirect a request.
+res.render()	Render a view template.
+res.send()	Send a response of various types.
+res.sendFile()	Send a file as an octet stream.
+res.sendStatus()	Set the response status code and send its string representation as the response body.
+
+*To load the middleware function, call app.use(), specifying the middleware function. For example, the following code loads the myLogger middleware function before the route to the root path (/).*
+
+##writing middleware for use in express apps
+Configurable middleware
+If you need your middleware to be configurable, export a function which accepts an options object or other parameters, which, then returns the middleware implementation based on the input parameters.
+
+File: my-middleware.js
+
+module.exports = function(options) {
+  return function(req, res, next) {
+    // Implement the middleware function based on the options object
+    next()
+  }
+}
+The middleware can now be used as shown below.
+
+var mw = require('./my-middleware.js')
+
+app.use(mw({ option1: '1', option2: '2' }))
+
+An Express application can use the following types of middleware:
+
+###Application-level middleware
+Router-level middleware
+Error-handling middleware
+Built-in middleware
+Third-party middleware
+You can load application-level and router-level middleware with an optional mount path. You can also load a series of middleware functions together, which creates a sub-stack of the middleware system at a mount point.
+
+how does middleware work well with different paths
+
+Application-level middleware
+Bind application-level middleware to an instance of the app object by using the app.use() and app.METHOD() functions, where METHOD is the HTTP method of the request that the middleware function handles (such as GET, PUT, or POST) in lowercase.
+
+This example shows a middleware function with no mount path. The function is executed every time the app receives a request.
+
+var app = express()
+
+app.use(function (req, res, next) {
+  console.log('Time:', Date.now())
+  next()
+})
+
+This example shows a middleware function mounted on the /user/:id path. The function is executed for any type of HTTP request on the /user/:id path.
+
+app.use('/user/:id', function (req, res, next) {
+  console.log('Request Type:', req.method)
+  next()
+})
+This example shows a route and its handler function (middleware system). The function handles GET requests to the /user/:id path.
+
+app.get('/user/:id', function (req, res, next) {
+  res.send('USER')
+})
+Here is an example of loading a series of middleware functions at a mount point, with a mount path. It illustrates a middleware sub-stack that prints request info for any type of HTTP request to the /user/:id path.
+
+app.use('/user/:id', function (req, res, next) {
+  console.log('Request URL:', req.originalUrl)
+  next()
+}, function (req, res, next) {
+  console.log('Request Type:', req.method)
+  next()
+})
+
+###Error-handling middleware
+Error-handling middleware always takes four arguments. You must provide four arguments to identify it as an error-handling middleware function. Even if you don’t need to use the next object, you must specify it to maintain the signature. Otherwise, the next object will be interpreted as regular middleware and will fail to handle errors.
+Define error-handling middleware functions in the same way as other middleware functions, except with four arguments instead of three, specifically with the signature (err, req, res, next)):
+
+app.use(function (err, req, res, next) {
+  console.error(err.stack)
+  res.status(500).send('Something broke!')
+})
+For details about error-handling middleware, see: Error handling.
+
+###Built-in middleware
+Starting with version 4.x, Express no longer depends on Connect. With the exception of express.static, all of the middleware functions that were previously included with Express’ are now in separate modules. Please view the list of middleware functions.
+
+The only built-in middleware function in Express is express.static. This function is based on serve-static, and is responsible for serving static assets such as HTML files, images, and so on.
+
+The function signature is:
+
+express.static(root, [options])
+The root argument specifies the root directory from which to serve static assets.
+
+For information on the options argument and more details on this middleware function, see express.static.
+
+Here is an example of using the express.static middleware function with an elaborate options object:
+
+var options = {
+  dotfiles: 'ignore',
+  etag: false,
+  extensions: ['htm', 'html'],
+  index: false,
+  maxAge: '1d',
+  redirect: false,
+  setHeaders: function (res, path, stat) {
+    res.set('x-timestamp', Date.now())
+  }
+}
+
+app.use(express.static('public', options))
+
+###Third-party middleware
+Use third-party middleware to add functionality to Express apps.
+
+Install the Node.js module for the required functionality, then load it in your app at the application level or at the router level.
+
+The following example illustrates installing and loading the cookie-parsing middleware function cookie-parser.
+
+$ npm install cookie-parser
+var express = require('express')
+var app = express()
+var cookieParser = require('cookie-parser')
+
+// load the cookie-parsing middleware
+app.use(cookieParser())
+##Using template engines with Express
+A template engine enables you to use static template files in your application. At runtime, the template engine replaces variables in a template file with actual values, and transforms the template into an HTML file sent to the client. This approach makes it easier to design an HTML page.
+
+Some popular template engines that work with Express are Pug, Mustache, and EJS. The Express application generator uses Jade as its default, but it also supports several others.
+
+See Template Engines (Express wiki) for a list of template engines you can use with Express. See also Comparing JavaScript Templating Engines: Jade, Mustache, Dust and More.
+
+Note: Jade has been renamed to Pug. You can continue to use Jade in your app, and it will work just fine. However if you want the latest updates to the template engine, you must replace Jade with Pug in your app.
+
+After the view engine is set, you don’t have to specify the engine or load the template engine module in your app; Express loads the module internally, as shown below (for the above example).
+
+app.set('view engine', 'pug')
+Create a Pug template file named index.pug in the views directory, with the following content:
+
+html
+  head
+    title= title
+  body
+    h1= message
+Then create a route to render the index.pug file. If the view engine property is not set, you must specify the extension of the view file. Otherwise, you can omit it.
+
+app.get('/', function (req, res) {
+  res.render('index', { title: 'Hey', message: 'Hello there!' })
+})
+When you make a request to the home page, the index.pug file will be rendered as HTML.
+
+Note: The view engine cache does not cache the contents of the template’s output, only the underlying template itself. The view is still re-rendered with every request even with the cache is on.
+
+To learn more about how template engines work in Express, see: “Developing template engines for Express”.
 
 #API4.x
