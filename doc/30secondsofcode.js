@@ -76,3 +76,5 @@ const chainAsync = fns => {
   const next = () => fns[curr++](next)
   next()
 }
+compose = (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)))
+
